@@ -17,6 +17,39 @@ static std::string fooProperty = "foo";
 boost::asio::io_context io;
 auto conn = std::make_shared<sdbusplus::asio::connection>(io);
 
+template <typename Callback>
+void asyncCall(Callback&& cb)
+{
+    // busctl call xyz.openbmc_project.Ipmi.Channel.Ipmb
+    // /xyz/openbmc_project/Ipmi/Channel/Ipmb org.openbmc.Ipmb sendRequest
+    // yyyyay 0x01 0x0a 0x00 0x48 0
+
+    constexpr auto service = "xyz.openbmc_project.Ipmi.Channel.Ipmb";
+    constexpr auto path = "/xyz/openbmc_project/Ipmi/Channel/Ipmb";
+    constexpr auto interface = "org.openbmc.Ipmb";
+    constexpr auto method = "sendRequest";
+    std::vector<uint8_t> data;
+
+    // iyyyyay
+    conn->async_method_call(
+        [cb = std::forward<Callback>(cb)](
+            const boost::system::error_code ec,
+            std::tuple<int, uint8_t, uint8_t, uint8_t, uint8_t,
+                       std::vector<uint8_t>>) {
+            if (ec)
+            {
+                lg2::error("asyncCall: failed, ec={EC}", "EC", ec.message());
+                return;
+            }
+
+            lg2::info("Async call succeeded");
+
+            cb();
+        },
+        service, path, interface, method, uint8_t(0x01), uint8_t(0x0a),
+        uint8_t(0x00), uint8_t(0x48), data);
+}
+
 void syncCall()
 {
     constexpr auto service = "com.foo";
@@ -42,13 +75,14 @@ void syncCall()
 void syncTimer()
 {
     static boost::asio::steady_timer timer(io);
-    timer.expires_after(std::chrono::milliseconds(10));
+    timer.expires_after(std::chrono::milliseconds(100));
     timer.async_wait([](const boost::system::error_code& ec) {
         if (ec)
         {
             return;
         }
-        syncCall();
+
+        asyncCall([]() {});
         syncTimer();
     });
 }
@@ -58,6 +92,5 @@ int main(int /*argc*/, char** /*argv*/)
     syncTimer();
 
     io.run();
-
     return 0;
 }

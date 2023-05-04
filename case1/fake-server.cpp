@@ -29,13 +29,13 @@ void syncCall()
                                       "org.freedesktop.DBus.Properties", "Get");
     method.append(interface, property);
     auto start = std::chrono::steady_clock::now();
-    fprintf(stderr, "Debug sync call start: %ld\n",
+    fprintf(stderr, "Debug sync call start: %lld\n",
             std::chrono::duration_cast<std::chrono::milliseconds>(
                 start.time_since_epoch())
                 .count());
     bus.call(method);
     auto end = std::chrono::steady_clock::now();
-    fprintf(stderr, "Debug sync call end: %ld\n",
+    fprintf(stderr, "Debug sync call end: %lld\n",
             std::chrono::duration_cast<std::chrono::milliseconds>(
                 end.time_since_epoch())
                 .count());
