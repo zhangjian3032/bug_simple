@@ -13,3 +13,4 @@ sdbusplus_dep = dependency('sdbusplus')
 phosphor_logging_dep = dependency('phosphor-logging')
 
 subdir('case1')
+subdir('match')
