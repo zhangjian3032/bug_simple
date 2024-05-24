@@ -17,16 +17,6 @@ auto conn = std::make_shared<sdbusplus::asio::connection>(io);
 
 std::optional<sdbusplus::bus::match_t> match;
 
-void registerMatch()
-{
-     match = sdbusplus::bus::match_t (
-        *conn,
-        sdbusplus::bus::match::rules::propertiesChanged("/com/foo", "com.foo"),
-        [](sdbusplus::message_t& ) {
-    });
-
-}
-
 void timerHandler()
 {
     static boost::asio::steady_timer timer(io);
@@ -36,9 +26,19 @@ void timerHandler()
         {
             return;
         }
-        registerMatch();
-        timerHandler();
+
+        fprintf(stderr, "Jian debug: 10s no tick, exit\n");
+
+        exit(-1);
     });
+}
+
+void registerMatch()
+{
+    match = sdbusplus::bus::match_t(
+        *conn,
+        sdbusplus::bus::match::rules::propertiesChanged("/com/foo", "com.foo"),
+        [](sdbusplus::message_t&) { timerHandler(); });
 }
 
 int main(int /*argc*/, char** /*argv*/)
@@ -60,8 +60,6 @@ int main(int /*argc*/, char** /*argv*/)
             return foo;
         });
     fooIfc->initialize();
-
-    timerHandler();
 
     conn->request_name("com.foo");
 
